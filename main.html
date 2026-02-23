@@ -1,0 +1,1565 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ResumeGenius</title>
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <!-- Supabase Client -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        /* CSS FROM styles.css */
+        :root {
+            --bg-dark: #0b0e14;
+            --card-bg: #111622;
+            --sidebar-bg: #0b101b;
+            --primary: #135bec;
+            --primary-glow: rgba(19, 91, 236, 0.3);
+            --text-main: #ffffff;
+            --text-muted: #8b9bb2;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --input-bg: #1a202e;
+            --input-focus-border: rgba(19, 91, 236, 0.5);
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #f43f5e;
+            --info: #0ea5e9;
+            --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            --sidebar-width: 260px;
+            --header-height: 70px;
+            --radius: 12px;
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            line-height: 1.5;
+            overflow-x: hidden;
+        }
+
+        body.sidebar-open {
+            overflow: hidden;
+        }
+
+        /* Layout */
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        aside.sidebar {
+            width: var(--sidebar-width);
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 24px 16px;
+            position: fixed;
+            height: 100vh;
+            z-index: 1000;
+            transition: var(--transition);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 40px;
+            padding: 0 8px;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: var(--primary);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .logo-text h1 {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-text span {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .nav-links {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex-grow: 1;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            text-decoration: none;
+            color: var(--text-muted);
+            border-radius: var(--radius);
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-main);
+        }
+
+        .nav-link.active {
+            background: rgba(19, 91, 236, 0.1);
+            color: var(--primary);
+        }
+
+        .nav-link i {
+            font-size: 20px;
+        }
+
+        .sidebar-footer {
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+            margin-top: auto;
+        }
+
+        .upload-btn {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            margin-bottom: 24px;
+            transition: background 0.2s;
+        }
+
+        .upload-btn:hover {
+            background: #004bdc;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 4px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: #e2e8f0;
+            border-radius: 50%;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .user-info h3 {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .user-info span {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* Main Content */
+        main.content {
+            flex-grow: 1;
+            margin-left: var(--sidebar-width);
+            padding: 0;
+            min-height: 100vh;
+        }
+
+        header.top-bar {
+            height: var(--header-height);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 40px;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(11, 14, 20, 0.8);
+            backdrop-filter: blur(8px);
+            position: sticky;
+            top: 0;
+            z-index: 900;
+        }
+
+        .mobile-nav-toggle {
+            display: none;
+            background: transparent;
+            border: none;
+            color: var(--text-main);
+            cursor: pointer;
+        }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .breadcrumb span.sep {
+            color: var(--border-color);
+        }
+
+        .breadcrumb span.current {
+            color: var(--text-main);
+            font-weight: 500;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .search-bar {
+            position: relative;
+        }
+
+        .search-bar input {
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px 14px 10px 40px;
+            color: white;
+            font-size: 14px;
+            width: 280px;
+            outline: none;
+        }
+
+        .search-bar i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+
+        .notification-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 22px;
+            cursor: pointer;
+        }
+
+        /* Container */
+        .container {
+            padding: 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .page-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 32px;
+        }
+
+        .page-title h2 {
+            font-size: 32px;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .page-title p {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .page-title .highlight {
+            color: var(--text-main);
+            font-weight: 600;
+        }
+
+        .btn {
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .btn-secondary {
+            background: var(--card-bg);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #004bdc;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(19, 91, 236, 0.3);
+        }
+
+        /* Card Styles */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .grid-cols-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        .grid-cols-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        /* Score Section */
+        .score-circle {
+            position: relative;
+            width: 220px;
+            height: 220px;
+            margin-bottom: 24px;
+        }
+
+        .score-circle svg {
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+        }
+
+        .score-circle circle {
+            fill: none;
+            stroke-width: 14;
+            stroke-linecap: round;
+        }
+
+        .score-bg {
+            stroke: rgba(255, 255, 255, 0.05);
+        }
+
+        .score-progress {
+            stroke: var(--primary);
+            stroke-dasharray: 628;
+            stroke-dashoffset: 628;
+            transition: stroke-dashoffset 1s ease-out;
+        }
+
+        .score-text {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .score-number {
+            font-size: 56px;
+            font-weight: 900;
+        }
+
+        .score-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* Recommendations */
+        .rec-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .rec-item {
+            display: flex;
+            gap: 16px;
+            padding: 16px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+        }
+
+        .rec-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .priority-high {
+            background: rgba(244, 63, 94, 0.1);
+            border-color: rgba(244, 63, 94, 0.2);
+        }
+
+        .priority-high .rec-icon {
+            background: var(--danger);
+        }
+
+        /* Keyword tags */
+        .keyword-tag {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            background: rgba(19, 91, 236, 0.1);
+            color: var(--primary);
+            border: 1px solid rgba(19, 91, 236, 0.2);
+            display: inline-block;
+            margin: 4px;
+        }
+
+        .keyword-tag.missing {
+            background: rgba(244, 63, 94, 0.1);
+            color: var(--danger);
+            border: 1px solid rgba(244, 63, 94, 0.2);
+        }
+
+        /* History Table */
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .history-table th {
+            text-align: left;
+            padding: 16px;
+            color: var(--text-muted);
+            font-size: 12px;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .history-table td {
+            padding: 20px 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* Editor */
+        .editor-layout {
+            display: grid;
+            grid-template-columns: 1fr 450px;
+            gap: 32px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .full-width {
+            grid-column: span 2;
+        }
+
+        input,
+        textarea,
+        select {
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            color: white;
+            font-family: inherit;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+        }
+
+        .live-preview {
+            background: white;
+            color: #111;
+            border-radius: 8px;
+            padding: 40px;
+            min-height: 600px;
+            box-shadow: var(--shadow);
+        }
+
+        .preview-header h1 {
+            font-size: 28px;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        /* Auth Screen */
+        #auth-screen {
+            position: fixed;
+            inset: 0;
+            background: var(--bg-dark);
+            z-index: 5000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .auth-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: var(--shadow);
+        }
+
+        .auth-logo {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        /* Animations */
+        .animate-fade-in {
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Responsive Mobile Styles */
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            body.sidebar-open .sidebar {
+                transform: translateX(0);
+            }
+
+            .content {
+                margin-left: 0 !important;
+            }
+
+            .mobile-nav-toggle {
+                display: block;
+            }
+
+            .grid-cols-2,
+            .grid-cols-3,
+            .editor-layout {
+                grid-template-columns: 1fr !important;
+            }
+        }
+
+        /* Settings specific from settings.html */
+        .settings-nav {
+            display: flex;
+            gap: 24px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 32px;
+        }
+
+        .settings-nav-item {
+            padding: 12px 4px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .settings-nav-item.active {
+            color: var(--primary);
+        }
+
+        .settings-nav-item.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--primary);
+        }
+
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .profile-avatar-wrapper {
+            position: relative;
+        }
+
+        .profile-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        #uploadModal {
+            position: fixed;
+            inset: 0;
+            z-index: 2000;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .rotating {
+            animation: spin 2s linear infinite;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .sidebar-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 950;
+            display: none;
+        }
+
+        body.sidebar-open .sidebar-overlay {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Auth Screen -->
+    <div id="auth-screen">
+        <div class="auth-card animate-fade-in">
+            <div class="auth-logo">
+                <div class="logo-icon" style="margin: 0 auto 16px;">
+                    <i class="material-icons-round">analytics</i>
+                </div>
+                <h2 style="font-size: 24px; font-weight: 800;">ResumeGenius</h2>
+                <p id="auth-subtitle" style="color: var(--text-muted); font-size: 14px; margin-top: 8px;">Sign in to
+                    unlock AI-powered insights</p>
+            </div>
+            <form id="auth-form" class="rec-list">
+                <!-- Full name field shown only on sign-up -->
+                <div class="form-group" id="name-field" style="display: none;">
+                    <label
+                        style="font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Full
+                        Name</label>
+                    <input type="text" id="auth-fullname" placeholder="John Doe">
+                </div>
+                <div class="form-group">
+                    <label
+                        style="font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Email
+                        Address</label>
+                    <input type="email" id="auth-email" placeholder="name@company.com" required>
+                </div>
+                <div class="form-group">
+                    <label
+                        style="font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Password</label>
+                    <input type="password" id="auth-password" placeholder="••••••••" required>
+                </div>
+                <button type="submit" id="auth-submit" class="btn btn-primary"
+                    style="width: 100%; justify-content: center; padding: 14px; margin-top: 8px;">Sign In</button>
+            </form>
+            <div style="text-align: center; margin-top: 24px;">
+                <p style="font-size: 13px; color: var(--text-muted);">
+                    <span id="auth-toggle-text">Don't have an account?</span>
+                    <button id="auth-toggle-btn"
+                        style="background: none; border: none; color: var(--primary); font-weight: 700; cursor: pointer; margin-left: 4px;">Sign
+                        Up</button>
+                </p>
+            </div>
+            <div id="auth-message" style="margin-top: 16px; text-align: center; font-size: 13px; min-height: 20px;">
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App Container -->
+    <div class="app-container" id="main-app" style="display: none;">
+        <div class="sidebar-overlay" id="sidebar-overlay"></div>
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="material-icons-round">analytics</i>
+                </div>
+                <div class="logo-text">
+                    <h1>ResumeGenius</h1>
+                    <span>v3.0.0</span>
+                </div>
+            </div>
+
+            <nav class="nav-links">
+                <div onclick="switchPage('dashboard')" id="nav-dashboard" class="nav-link active">
+                    <i class="material-icons-round">dashboard</i>
+                    Dashboard
+                </div>
+                <div onclick="switchPage('editor')" id="nav-editor" class="nav-link">
+                    <i class="material-icons-round">description</i>
+                    Resume Editor
+                </div>
+                <div onclick="switchPage('matcher')" id="nav-matcher" class="nav-link">
+                    <i class="material-icons-round">work</i>
+                    Job Matcher
+                </div>
+                <div onclick="switchPage('history')" id="nav-history" class="nav-link">
+                    <i class="material-icons-round">history</i>
+                    Analysis History
+                </div>
+                <div onclick="switchPage('settings')" id="nav-settings" class="nav-link">
+                    <i class="material-icons-round">settings</i>
+                    Settings
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="upload-btn" onclick="openUploadModal()">
+                    <i class="material-icons-round">upload</i>
+                    Upload New
+                </button>
+                <div class="user-profile">
+                    <div class="user-avatar">
+                        <img id="sidebar-avatar" src="https://i.pravatar.cc/100?u=alex" alt="User">
+                    </div>
+                    <div class="user-info">
+                        <h3 id="sidebar-name">Loading...</h3>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 11px; color: var(--info);">Premium</span>
+                            <button onclick="handleLogout()"
+                                style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 11px;">Logout</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="content">
+            <header class="top-bar">
+                <button class="mobile-nav-toggle" id="mobile-toggle">
+                    <i class="material-icons-round">menu</i>
+                </button>
+                <div class="breadcrumb">
+                    <span id="breadcrumb-parent">Pages</span>
+                    <span class="sep">/</span>
+                    <span class="current" id="breadcrumb-current">Dashboard</span>
+                </div>
+                <div class="header-actions">
+                    <div class="search-bar">
+                        <i class="material-icons-round">search</i>
+                        <input type="text" placeholder="Search insights...">
+                    </div>
+                    <button class="notification-btn">
+                        <i class="material-icons-round">notifications</i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Dashboard Page -->
+            <div id="page-dashboard" class="page-content container animate-fade-in">
+                <!-- Dynamic Greeting Banner -->
+                <div
+                    style="margin-bottom: 32px; padding: 28px 32px; background: linear-gradient(135deg, rgba(19,91,236,0.15) 0%, rgba(14,165,233,0.08) 100%); border: 1px solid rgba(19,91,236,0.2); border-radius: 20px; display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <div style="font-size: 13px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;"
+                            id="dash-time-label">Good Morning ☀️</div>
+                        <h2 style="font-size: 28px; font-weight: 800; margin-bottom: 4px;">Welcome back, <span
+                                id="dash-greeting-name" style="color: var(--primary);">User</span>!</h2>
+                        <p style="color: var(--text-muted); font-size: 14px;">Logged in as <span id="dash-user-email"
+                                style="color: var(--text-main);">—</span></p>
+                    </div>
+                    <div
+                        style="width: 64px; height: 64px; background: rgba(19,91,236,0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                        <img id="dash-avatar" src="https://i.pravatar.cc/64?u=alex"
+                            style="width: 64px; height: 64px; border-radius: 50%; object-fit: cover;" alt="avatar">
+                    </div>
+                </div>
+
+                <div class="page-header">
+                    <div class="page-title">
+                        <h2>Overview</h2>
+                        <p>Latest Resume: <span class="highlight" id="dash-filename">Senior_Engineer_2024.pdf</span> •
+                            Last scan: <span id="dash-date">Oct 24, 2023</span></p>
+                    </div>
+                    <div class="action-buttons">
+                        <button class="btn btn-secondary" onclick="openUploadModal()">
+                            <i class="material-icons-round">refresh</i>
+                            Re-scan
+                        </button>
+                        <button class="btn btn-primary" onclick="switchPage('editor')">
+                            <i class="material-icons-round">edit</i>
+                            Edit
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid-cols-2">
+                    <div class="card"
+                        style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+                        <div class="score-circle">
+                            <svg viewBox="0 0 220 220">
+                                <circle class="score-bg" cx="110" cy="110" r="100"></circle>
+                                <circle id="dash-score-ring" class="score-progress" cx="110" cy="110" r="100"
+                                    style="stroke-dashoffset: 628;"></circle>
+                            </svg>
+                            <div class="score-text">
+                                <span class="score-number" id="dash-score-num">0</span>
+                                <span class="score-label">ATS Score</span>
+                            </div>
+                        </div>
+                        <h3>Excellent Progress!</h3>
+                        <p style="color: var(--text-muted); font-size: 14px; max-width: 400px; margin-top: 8px;">Your
+                            resume matches most requirements for Senior roles. Add 2 more keywords to reach the 90+
+                            club.</p>
+                    </div>
+
+                    <div class="card">
+                        <div
+                            style="font-size: 18px; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                            <i class="material-icons-round" style="color: var(--primary);">lightbulb</i> Quick Fixes
+                        </div>
+                        <div class="rec-list">
+                            <div class="rec-item priority-high">
+                                <div class="rec-icon"><i class="material-icons-round"
+                                        style="color: white;">priority_high</i></div>
+                                <div class="rec-content">
+                                    <h4 style="font-size: 14px;">Missing LinkedIn URL</h4>
+                                    <p style="font-size: 12px; color: var(--text-muted);">Include your profile in the
+                                        header for 5% boost.</p>
+                                </div>
+                            </div>
+                            <div class="rec-item"
+                                style="background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.2);">
+                                <div class="rec-icon" style="background: var(--warning);"><i
+                                        class="material-icons-round" style="color: white;">bolt</i></div>
+                                <div class="rec-content">
+                                    <h4 style="font-size: 14px;">Action Verbs Needed</h4>
+                                    <p style="font-size: 12px; color: var(--text-muted);">Use "Architected" instead of
+                                        "Worked on".</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid-cols-3" style="margin-top: 24px;">
+                    <div class="card" style="padding: 16px;">
+                        <div
+                            style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">
+                            Formatting</div>
+                        <div style="font-size: 28px; font-weight: 800; margin: 4px 0;">92/100</div>
+                        <div
+                            style="height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden;">
+                            <div style="width: 92%; height: 100%; background: var(--success);"></div>
+                        </div>
+                    </div>
+                    <div class="card" style="padding: 16px;">
+                        <div
+                            style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">
+                            Keywords</div>
+                        <div style="font-size: 28px; font-weight: 800; margin: 4px 0;">65/100</div>
+                        <div
+                            style="height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden;">
+                            <div style="width: 65%; height: 100%; background: var(--primary);"></div>
+                        </div>
+                    </div>
+                    <div class="card" style="padding: 16px;">
+                        <div
+                            style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">
+                            Impact</div>
+                        <div style="font-size: 28px; font-weight: 800; margin: 4px 0;">77/100</div>
+                        <div
+                            style="height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden;">
+                            <div style="width: 77%; height: 100%; background: var(--warning);"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Editor Page -->
+            <div id="page-editor" class="page-content container animate-fade-in" style="display: none;">
+                <div class="page-header">
+                    <div class="page-title">
+                        <h2>Resume Builder</h2>
+                        <p>Real-time AI suggestions as you type.</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="alert('PDF Generated!')">
+                        <i class="material-icons-round">download</i>
+                        Download PDF
+                    </button>
+                </div>
+
+                <div class="editor-layout">
+                    <div class="editor-side rec-list">
+                        <div class="card">
+                            <div
+                                style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px; color: var(--primary);">
+                                <i class="material-icons-round">person</i>
+                                <h3>Contact Info</h3>
+                            </div>
+                            <div class="form-grid">
+                                <div class="form-group full-width">
+                                    <label>Full Name</label>
+                                    <input type="text" id="ed-name" placeholder="John Doe">
+                                </div>
+                                <div class="form-group">
+                                    <label>Email</label>
+                                    <input type="email" id="ed-email">
+                                </div>
+                                <div class="form-group">
+                                    <label>Phone</label>
+                                    <input type="text" id="ed-phone">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div
+                                style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px; color: var(--primary);">
+                                <i class="material-icons-round">description</i>
+                                <h3>Professional Summary</h3>
+                            </div>
+                            <div class="form-group full-width">
+                                <textarea id="ed-bio" style="min-height: 120px;"
+                                    placeholder="Write a brief professional summary..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="preview-side">
+                        <div class="card" style="padding: 0; overflow: hidden; position: sticky; top: 100px;">
+                            <div
+                                style="background: #f8fafc; padding: 12px 20px; border-bottom: 1px solid #e2e8f0; text-align: right;">
+                                <span style="font-size: 11px; font-weight: 700; color: #94a3b8;">LIVE PREVIEW</span>
+                            </div>
+                            <div class="live-preview" id="resume-preview">
+                                <div class="preview-header">
+                                    <h1 id="pv-name">Candidate Name</h1>
+                                    <div
+                                        style="display: flex; justify-content: center; gap: 15px; font-size: 12px; color: #64748b;">
+                                        <span id="pv-email">email@example.com</span>
+                                        <span id="pv-phone">+1 000 000 0000</span>
+                                    </div>
+                                </div>
+                                <div style="margin-top: 24px; border-top: 1px solid #eee; padding-top: 15px;">
+                                    <h3 style="font-size: 14px; color: var(--primary); margin-bottom: 8px;">SUMMARY</h3>
+                                    <p id="pv-bio" style="font-size: 12px; line-height: 1.6;">Summary content will
+                                        appear here...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Job Matcher Page -->
+            <div id="page-matcher" class="page-content container animate-fade-in" style="display: none;">
+                <div class="page-header">
+                    <div class="page-title">
+                        <h2>Job Matcher</h2>
+                        <p>Paste a job description to see how you stack up.</p>
+                    </div>
+                </div>
+                <div class="grid-cols-2" style="grid-template-columns: 1fr 400px; gap: 32px;">
+                    <div class="card" style="display: flex; flex-direction: column;">
+                        <h3 style="margin-bottom: 20px;">Job Description</h3>
+                        <textarea id="job-desc" style="flex-grow: 1; min-height: 400px; padding: 20px;"
+                            placeholder="Paste job requirements here..."></textarea>
+                        <button class="btn btn-primary" style="margin-top: 20px; width: 100%; justify-content: center;"
+                            onclick="analyzeJobMatch()">
+                            <i class="material-icons-round">analytics</i> Analyze Match
+                        </button>
+                    </div>
+                    <div class="rec-list">
+                        <div class="card" style="text-align: center;">
+                            <h3>Match Score</h3>
+                            <div style="font-size: 64px; font-weight: 900; color: var(--warning); margin: 20px 0;"
+                                id="match-score">--</div>
+                            <p style="color: var(--text-muted); font-size: 14px;">Paste a JD and click analyze to see
+                                your score.</p>
+                        </div>
+                        <div class="card" id="match-keywords" style="display: none;">
+                            <h4 style="margin-bottom: 12px;">Skill Gaps</h4>
+                            <div id="missing-tags"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- History Page -->
+            <div id="page-history" class="page-content container animate-fade-in" style="display: none;">
+                <div class="page-header">
+                    <div class="page-title">
+                        <h2>Analysis History</h2>
+                        <p>Track your score improvements.</p>
+                    </div>
+                </div>
+                <div class="card" style="padding:0; overflow: hidden;">
+                    <table class="history-table">
+                        <thead>
+                            <tr>
+                                <th>Resume Name</th>
+                                <th>Date</th>
+                                <th>Score</th>
+                                <th style="text-align: right;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-body">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Settings Page -->
+            <div id="page-settings" class="page-content container animate-fade-in" style="display: none;">
+                <div class="page-header">
+                    <div class="page-title">
+                        <h2>Profile Settings</h2>
+                        <p>Update your personal information.</p>
+                    </div>
+                </div>
+                <div class="card" style="max-width: 800px;">
+                    <div class="profile-header">
+                        <img id="settings-avatar" src="https://i.pravatar.cc/100?u=alex" class="profile-avatar">
+                        <div>
+                            <button class="btn btn-secondary btn-sm" onclick="changeAvatar()">Change Photo</button>
+                        </div>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Full Name</label>
+                            <input type="text" id="set-name">
+                        </div>
+                        <div class="form-group">
+                            <label>Professional Bio</label>
+                            <textarea id="set-bio"></textarea>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" style="margin-top: 24px;" onclick="saveSettings()">Save
+                        Changes</button>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Upload Modal -->
+    <div id="uploadModal">
+        <div class="auth-card" style="text-align: center;">
+            <div id="upload-initial">
+                <div
+                    style="width: 80px; height: 80px; background: rgba(19, 91, 236, 0.1); color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;">
+                    <i class="material-icons-round" style="font-size: 40px;">cloud_upload</i>
+                </div>
+                <h3>Upload Resume</h3>
+                <p style="color: var(--text-muted); font-size: 14px; margin: 12px 0 24px;">Select a PDF or DOCX file.
+                </p>
+                <input type="file" id="file-input" style="display: none;" accept=".pdf,.doc,.docx">
+                <button class="btn btn-primary" style="width: 100%; justify-content: center;"
+                    onclick="document.getElementById('file-input').click()">Select File</button>
+                <button class="btn btn-secondary" style="width: 100%; justify-content: center; margin-top: 12px;"
+                    onclick="closeUploadModal()">Cancel</button>
+            </div>
+            <div id="upload-progress" style="display: none;">
+                <div class="rotating" style="display: inline-block; margin-bottom: 20px;">
+                    <i class="material-icons-round" style="font-size: 48px; color: var(--primary);">sync</i>
+                </div>
+                <h3 id="progress-text">Analyzing...</h3>
+                <p style="color: var(--text-muted); font-size: 13px;">Our AI is scanning your experience and skills.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- SUPABASE CONFIGURATION ---
+        // 🔧 Replace these with your actual Supabase project credentials:
+        const SUPABASE_URL = 'https://jylvewubqgubgxzwkgfe.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp5bHZld3VicWd1Ymd4endrZ2ZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4MzIwOTgsImV4cCI6MjA4NzQwODA5OH0.M-cgnqmO8_rhf0QEVo8QH0IGtI3vQxTXpooFzsZ0a9s';
+
+        // Initialize Supabase correctly using the CDN global (window.supabase)
+        let supabaseClient = null;
+        try {
+            if (typeof window.supabase !== 'undefined' && !SUPABASE_URL.includes('YOUR_')) {
+                supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                console.log('✅ Supabase initialized successfully.');
+            } else {
+                console.warn('⚠️ Supabase credentials not set. Running in demo/mock mode.');
+            }
+        } catch (e) {
+            console.error('Supabase init error:', e);
+        }
+
+        // --- STATE MANAGEMENT ---
+        let currentUser = null;
+        let isAuthLoading = true;
+        let authMode = 'login'; // 'login' or 'signup'
+
+        // --- AUTH LOGIC ---
+        const authForm = document.getElementById('auth-form');
+        const authToggleBtn = document.getElementById('auth-toggle-btn');
+        const authMessage = document.getElementById('auth-message');
+
+        authToggleBtn.onclick = () => {
+            authMode = authMode === 'login' ? 'signup' : 'login';
+            const isSignup = authMode === 'signup';
+            document.getElementById('auth-submit').innerText = isSignup ? 'Create Account' : 'Sign In';
+            document.getElementById('auth-subtitle').innerText = isSignup ? 'Join thousands of job seekers today' : 'Sign in to unlock AI-powered insights';
+            document.getElementById('auth-toggle-text').innerText = isSignup ? 'Already have an account?' : "Don't have an account?";
+            authToggleBtn.innerText = isSignup ? 'Sign In' : 'Sign Up';
+            // Show/hide full name field
+            document.getElementById('name-field').style.display = isSignup ? 'block' : 'none';
+        };
+
+        // =====================================================
+        // SIMPLE DATABASE AUTH (uses "users" table in Supabase)
+        // =====================================================
+        // Required table schema in Supabase SQL Editor:
+        //
+        //   CREATE TABLE IF NOT EXISTS users (
+        //     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+        //     full_name TEXT NOT NULL,
+        //     email TEXT UNIQUE NOT NULL,
+        //     password TEXT NOT NULL,
+        //     created_at TIMESTAMPTZ DEFAULT NOW()
+        //   );
+        //
+        // Then disable RLS or add a policy to allow anon select/insert:
+        //   ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+        //   CREATE POLICY "Allow public access" ON users FOR ALL USING (true) WITH CHECK (true);
+        // =====================================================
+
+        authForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('auth-email').value.trim().toLowerCase();
+            const password = document.getElementById('auth-password').value;
+            const fullName = document.getElementById('auth-fullname').value.trim();
+            authMessage.innerText = 'Processing...';
+            authMessage.style.color = 'var(--text-muted)';
+
+            if (!email || !password) {
+                authMessage.innerText = '❌ Please enter email and password.';
+                authMessage.style.color = 'var(--danger)';
+                return;
+            }
+
+            try {
+                if (!supabaseClient) {
+                    authMessage.innerText = '❌ Supabase not connected.';
+                    authMessage.style.color = 'var(--danger)';
+                    return;
+                }
+
+                if (authMode === 'login') {
+                    // --- LOGIN: Check if email exists in "users" table ---
+                    const { data, error } = await supabaseClient
+                        .from('users')
+                        .select('*')
+                        .eq('email', email)
+                        .single();
+
+                    if (error || !data) {
+                        authMessage.innerText = '❌ No account found with this email.';
+                        authMessage.style.color = 'var(--danger)';
+                        return;
+                    }
+
+                    // Login success
+                    currentUser = {
+                        id: data.id,
+                        email: data.email,
+                        user_metadata: { full_name: data.full_name }
+                    };
+                    localStorage.setItem('rg_session', JSON.stringify(currentUser));
+                    authMessage.innerText = '✅ Login successful!';
+                    authMessage.style.color = 'var(--success)';
+                    setTimeout(initApp, 600);
+
+                } else {
+                    // --- SIGNUP: Store name + email in "users" table ---
+                    if (!fullName) {
+                        authMessage.innerText = '❌ Please enter your full name.';
+                        authMessage.style.color = 'var(--danger)';
+                        return;
+                    }
+
+                    // Check if email already exists
+                    const { data: existing } = await supabaseClient
+                        .from('users')
+                        .select('id')
+                        .eq('email', email)
+                        .single();
+
+                    if (existing) {
+                        authMessage.innerText = '❌ An account with this email already exists.';
+                        authMessage.style.color = 'var(--danger)';
+                        return;
+                    }
+
+                    // Insert new user (only name + email, no password stored)
+                    const { data: newUser, error: insertErr } = await supabaseClient
+                        .from('users')
+                        .insert([{ full_name: fullName, email: email }])
+                        .select()
+                        .single();
+
+                    if (insertErr) {
+                        authMessage.innerText = '❌ Signup failed: ' + insertErr.message;
+                        authMessage.style.color = 'var(--danger)';
+                        return;
+                    }
+
+                    // Auto-login after signup
+                    currentUser = {
+                        id: newUser.id,
+                        email: newUser.email,
+                        user_metadata: { full_name: newUser.full_name }
+                    };
+                    localStorage.setItem('rg_session', JSON.stringify(currentUser));
+                    authMessage.innerText = '✅ Account created! Logging in...';
+                    authMessage.style.color = 'var(--success)';
+                    setTimeout(initApp, 600);
+                }
+
+            } catch (err) {
+                authMessage.innerText = '❌ ' + (err.message || 'Something went wrong.');
+                authMessage.style.color = 'var(--danger)';
+            }
+        };
+
+        // --- SESSION PERSISTENCE (localStorage) ---
+        async function checkSession() {
+            const saved = localStorage.getItem('rg_session');
+            if (saved) {
+                try {
+                    currentUser = JSON.parse(saved);
+                    initApp();
+                } catch (e) {
+                    localStorage.removeItem('rg_session');
+                }
+            }
+        }
+
+        function handleLogout() {
+            currentUser = null;
+            localStorage.removeItem('rg_session');
+            window.location.reload();
+        }
+
+        // --- NAVIGATION LOGIC ---
+        function switchPage(pageId) {
+            document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+            const navLink = document.getElementById(`nav-${pageId}`);
+            if (navLink) navLink.classList.add('active');
+
+            document.querySelectorAll('.page-content').forEach(page => page.style.display = 'none');
+            const pageEl = document.getElementById(`page-${pageId}`);
+            if (pageEl) pageEl.style.display = 'block';
+
+            document.getElementById('breadcrumb-current').innerText = pageId.charAt(0).toUpperCase() + pageId.slice(1);
+            document.body.classList.remove('sidebar-open');
+        }
+
+        // --- APP INITIALIZATION ---
+        function getDisplayName(user) {
+            if (!user) return 'User';
+            const meta = user.user_metadata || {};
+            // Priority: full_name from metadata > name > email prefix
+            if (meta.full_name) return meta.full_name;
+            if (meta.name) return meta.name;
+            const emailPrefix = (user.email || '').split('@')[0];
+            // Make it human-readable: john.doe -> John Doe
+            return emailPrefix.replace(/[._]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || 'User';
+        }
+
+        function getGreeting() {
+            const hour = new Date().getHours();
+            if (hour < 12) return 'Good Morning ☀️';
+            if (hour < 17) return 'Good Afternoon 🌤️';
+            return 'Good Evening 🌙';
+        }
+
+        function initApp() {
+            document.getElementById('auth-screen').style.display = 'none';
+            document.getElementById('main-app').style.display = 'flex';
+
+            const name = getDisplayName(currentUser);
+            const email = currentUser?.email || '';
+
+            // --- Sidebar ---
+            document.getElementById('sidebar-name').innerText = name;
+
+            // --- Dashboard greeting ---
+            document.getElementById('dash-greeting-name').innerText = name;
+            document.getElementById('dash-user-email').innerText = email;
+            document.getElementById('dash-time-label').innerText = getGreeting();
+            if (email) {
+                // Use a consistent avatar based on email
+                const avatarUrl = `https://i.pravatar.cc/64?u=${encodeURIComponent(email)}`;
+                document.getElementById('dash-avatar').src = avatarUrl;
+                document.getElementById('sidebar-avatar').src = avatarUrl;
+                document.getElementById('settings-avatar').src = avatarUrl;
+            }
+
+            // --- Editor preview defaults ---
+            document.getElementById('pv-name').innerText = name;
+            document.getElementById('pv-email').innerText = email || 'email@example.com';
+            document.getElementById('ed-name').value = name;
+            document.getElementById('ed-email').value = email;
+
+            // --- Settings ---
+            document.getElementById('set-name').value = name;
+
+            loadStats();
+            renderHistory();
+            animateScore(78);
+        }
+
+        function animateScore(target) {
+            const el = document.getElementById('dash-score-num');
+            const ring = document.getElementById('dash-score-ring');
+            if (!el || !ring) return;
+            let current = 0;
+            const interval = setInterval(() => {
+                if (current >= target) {
+                    clearInterval(interval);
+                } else {
+                    current++;
+                    el.innerText = current;
+                    const offset = 628 * (1 - current / 100);
+                    ring.style.strokeDashoffset = offset;
+                }
+            }, 10);
+        }
+
+        // --- UPLOAD SIMULATION ---
+        function openUploadModal() {
+            const modal = document.getElementById('uploadModal');
+            modal.style.display = 'flex';
+            document.getElementById('upload-initial').style.display = 'block';
+            document.getElementById('upload-progress').style.display = 'none';
+        }
+
+        function closeUploadModal() {
+            document.getElementById('uploadModal').style.display = 'none';
+        }
+
+        document.getElementById('file-input').onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            document.getElementById('upload-initial').style.display = 'none';
+            document.getElementById('upload-progress').style.display = 'block';
+
+            const steps = ["Scanning PDF...", "Parsing History...", "Scoring Skills...", "Finalizing..."];
+            let i = 0;
+            const interval = setInterval(() => {
+                if (i < steps.length) {
+                    document.getElementById('progress-text').innerText = steps[i];
+                    i++;
+                } else {
+                    clearInterval(interval);
+                    const score = Math.floor(Math.random() * 20) + 70;
+                    saveAnalysis(file.name, score);
+                    setTimeout(() => {
+                        closeUploadModal();
+                        switchPage('dashboard');
+                        animateScore(score);
+                        document.getElementById('dash-filename').innerText = file.name;
+                    }, 500);
+                }
+            }, 800);
+        };
+
+        function saveAnalysis(name, score) {
+            const history = JSON.parse(localStorage.getItem('rg_history') || '[]');
+            history.unshift({ name, score, date: new Date().toLocaleDateString() });
+            localStorage.setItem('rg_history', JSON.stringify(history.slice(0, 10)));
+            renderHistory();
+        }
+
+        function renderHistory() {
+            const history = JSON.parse(localStorage.getItem('rg_history') || '[]');
+            const container = document.getElementById('history-body');
+            if (!container) return;
+            container.innerHTML = history.length ? '' : '<tr><td colspan="4" style="text-align:center; padding:40px; color:var(--text-muted);">No history found</td></tr>';
+
+            history.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <i class="material-icons-round" style="color:var(--primary);">picture_as_pdf</i>
+                            <div>
+                                <div style="font-weight:600; font-size:14px;">${item.name}</div>
+                                <div style="font-size:11px; color:var(--text-muted);">PDF Analysis</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td style="font-size:13px; color:var(--text-muted);">${item.date}</td>
+                    <td><span style="padding:4px 10px; background:rgba(16,185,129,0.1); color:var(--success); border-radius:12px; font-weight:700; font-size:12px;">${item.score}</span></td>
+                    <td style="text-align:right;"><button class="btn btn-secondary btn-sm" style="padding:4px 8px;"><i class="material-icons-round" style="font-size:16px;">visibility</i></button></td>
+                `;
+                container.appendChild(tr);
+            });
+        }
+
+        function loadStats() {
+            // Mock or from storage
+        }
+
+        // --- EDITOR SYNC ---
+        const edInputs = ['name', 'email', 'phone', 'bio'];
+        edInputs.forEach(id => {
+            const el = document.getElementById(`ed-${id}`);
+            if (el) {
+                el.oninput = () => {
+                    document.getElementById(`pv-${id}`).innerText = el.value || (id === 'name' ? 'Candidate Name' : '');
+                };
+            }
+        });
+
+        // --- JOB MATCHER ---
+        function analyzeJobMatch() {
+            const jd = document.getElementById('job-desc').value;
+            if (!jd) return alert("Please paste a JD first.");
+
+            const btn = document.querySelector('#page-matcher .btn-primary');
+            btn.innerText = 'Analyzing...';
+            btn.disabled = true;
+
+            setTimeout(() => {
+                const score = Math.floor(Math.random() * 30) + 50;
+                document.getElementById('match-score').innerText = score + '%';
+                document.getElementById('match-keywords').style.display = 'block';
+
+                const tags = ["Microservices", "GraphQL", "AWS Lambda", "GoLang"];
+                const container = document.getElementById('missing-tags');
+                container.innerHTML = '';
+                tags.forEach(t => {
+                    const span = document.createElement('span');
+                    span.className = 'keyword-tag missing';
+                    span.innerText = t;
+                    container.appendChild(span);
+                });
+
+                btn.innerText = 'Analyze Match';
+                btn.disabled = false;
+            }, 1500);
+        }
+
+        // --- SETTINGS ---
+        function saveSettings() {
+            const name = document.getElementById('set-name').value;
+            document.getElementById('sidebar-name').innerText = name;
+            document.getElementById('ed-name').value = name;
+            document.getElementById('pv-name').innerText = name;
+            alert("Settings saved!");
+        }
+
+        function changeAvatar() {
+            const url = prompt("Enter Image URL:");
+            if (url) {
+                document.getElementById('sidebar-avatar').src = url;
+                document.getElementById('settings-avatar').src = url;
+            }
+        }
+
+        // --- RESPONSIVE TOGGLE ---
+        document.getElementById('mobile-toggle').onclick = () => {
+            document.body.classList.add('sidebar-open');
+        };
+        document.getElementById('sidebar-overlay').onclick = () => {
+            document.body.classList.remove('sidebar-open');
+        };
+
+        // Boot
+        checkSession();
+    </script>
+</body>
+
+</html>
